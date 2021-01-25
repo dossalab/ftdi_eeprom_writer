@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <ftdi.h>
+#include <string.h>
 
 int read_decode_eeprom(struct ftdi_context *ftdi)
 {
@@ -80,7 +81,8 @@ int main(int argc, char **argv)
     int search_pid = 0x0;
     char *search_serial = NULL;
 
-    int new_pid = NULL;
+    int new_pid = -1;
+    int new_vid = -1;
     char *new_serial = NULL,
          *new_manufacturer = NULL,
          *new_product = NULL;
@@ -98,7 +100,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    while ((i = getopt(argc, argv, "eV:P:S:p:s:m:d:zqh?")) != -1)
+    while ((i = getopt(argc, argv, "eV:P:S:p:v:s:m:d:zqh?")) != -1)
     {
         switch (i)
         {
@@ -117,6 +119,10 @@ int main(int argc, char **argv)
             case 'p':
                 do_write  = 1;
                 new_pid = strtoul(optarg, NULL, 0);
+                break;
+            case 'v':
+                do_write  = 1;
+                new_vid = strtoul(optarg, NULL, 0);
                 break;
             case 's':
                 do_write  = 1;
@@ -151,6 +157,7 @@ int main(int argc, char **argv)
                 fprintf(stdout, "\tIf flags [p/s] not used, application only read EEPROM\n");
                 fprintf(stdout, "\tFor set new parameters use:\n");
                 fprintf(stdout, "\t  -p <pid>\tnew PID, for ft2232h : 0x6010\n");
+                fprintf(stdout, "\t  -v <vid>\tnew VID\n");
                 fprintf(stdout, "\t  -s <serial> \twrite, with serial number\n");
                 fprintf(stdout, "\t  -m <manufacturer> \twrite new manufacturer\n");
                 fprintf(stdout, "\t  -d <device> \twrite new device description\n");
@@ -179,7 +186,7 @@ int main(int argc, char **argv)
             fprintf (stdout, "[NULL]new serial : %s\n", new_serial);
         else
             fprintf (stdout, "new serial : %s\n", new_serial);
-        if (new_pid == NULL)
+        if (new_pid != -1)
             fprintf (stdout, "[NULL]new pid : %x\n", new_pid);
         else
             fprintf (stdout, "new pid : %x\n", new_pid);
@@ -355,7 +362,7 @@ int main(int argc, char **argv)
         }
         f = ftdi_erase_eeprom(ftdi);
 
-        if (new_pid != NULL)
+        if (new_pid != -1)
         {
             if (ftdi_set_eeprom_value(ftdi, PRODUCT_ID, new_pid) <0)
             {
@@ -363,6 +370,16 @@ int main(int argc, char **argv)
                         f, ftdi_get_error_string(ftdi));
             }
         }
+
+        if (new_vid != -1)
+        {
+            if (ftdi_set_eeprom_value(ftdi, VENDOR_ID, new_vid) <0)
+            {
+                fprintf(stderr, "ftdi_set_eeprom_value VENDOR_ID: %d (%s)\n",
+                        f, ftdi_get_error_string(ftdi));
+            }
+        }
+
         if (ftdi_set_eeprom_value(ftdi, MAX_POWER, 500) <0)
         {
             fprintf(stderr, "ftdi_set_eeprom_value MAX_POWER: %d (%s)\n",
