@@ -1,11 +1,11 @@
 IDIR =/usr/include/libftdi1/
 CFLAGS=-I$(IDIR)
 LDFLAGS ?= -lftdi1 -lusb
-PACKAGES = ftdi-eeprom-config
+PACKAGES = ftdi-eeprom-tool
 
 all: ${PACKAGES}
 
-ftdi-eeprom-config: eeprom_ftdi.c
+ftdi-eeprom-tool: eeprom_ftdi.c
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
 clean:
